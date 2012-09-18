@@ -73,6 +73,27 @@ http://wiki.tr8n.org/images/e/e1/Wf1.png
 
 http://wiki.tr8n.org/images/5/50/Wf2.png
 
+= Custom Exporters
+
+HTML, XML, JSON and CSV exports are supported by default. To create a new exporter, subclass WillFilter::Exporter::Base:
+
+  class MuppetExporter < WillFilter::Exporter::Base
+    def to_data
+      results.collect { 
+        result.muppify
+      }.to_json
+    end
+
+    def options
+      super.merge(:content_type => "text/puppet")
+    end
+  end
+
+  class MuppetFilter < WillFilter::BaseFilter
+    def custom_formats
+      [ MuppetExporter ]
+    end
+  end
 
 = Dummy Application
 
@@ -94,4 +115,4 @@ If you have any questions, comments or suggestions, email me at theiceberk@gmail
 == Authors and credits
 
 Authors::                Michael Berkovich
-
+Contributions::          James Kassemi (@atpay)

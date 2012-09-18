@@ -1,5 +1,5 @@
 #--
-# Copyright (c) 2010-2012 Michael Berkovich
+# Copyright (c) 2010-2012 James Kassemi
 #
 # Permission is hereby granted, free of charge, to any person obtaining
 # a copy of this software and associated documentation files (the
@@ -21,23 +21,40 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #++
 
-require 'csv'
-
 module WillFilter
-  class ExporterController < ApplicationController
-    def index
-      @wf_filter = WillFilter::Filter.deserialize_from_params(params)
-      render :layout => false
+  module Exporter
+    class Base
+      def initialize(filter)
+        @filter = filter
+      end
+
+      def process
+        return to_data, options
+      end
+
+      # Override to process results.
+      def to_data
+        results.to_s
+      end
+
+      def options
+        { :type => "text",
+          :charset => "utf-8" }
+      end
+
+      private
+      def fields
+        @filter.fields
+      end
+
+      def results
+        @filter.results.collect { |record|
+          fields.inject({}){ |h, field|
+            h[field] = record.send(field).to_s
+            h
+          }
+        }
+      end
     end
-  
-    def export
-      params[:page] = 1
-      params[:wf_per_page] = 10000 # max export limit
-  
-      @wf_filter = WillFilter::Filter.deserialize_from_params(params)
-      
-      data, opts = @wf_filter.exporter.process
-      send_data(data, opts)
-    end  
   end
 end

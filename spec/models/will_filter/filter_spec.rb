@@ -243,7 +243,6 @@ describe WillFilter::Filter do
         @filter.conditions.first.operator.should eq(:is)
       end
     end
-
   end
 
 end

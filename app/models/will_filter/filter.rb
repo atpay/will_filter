@@ -42,8 +42,12 @@
 
 module WillFilter
   class Filter < ActiveRecord::Base
-    self.table_name = :will_filter_filters 
+    include WillFilter
+
     attr_accessible :type, :name, :data, :user_id, :model_class_name
+
+    self.table_name = :will_filter_filters 
+    attr_accessor :custom_formats
 
     # set_table_name  :will_filter_filters
     serialize       :data
@@ -716,33 +720,21 @@ module WillFilter
     # Export Filter Data
     #############################################################################
     def export_formats
-      formats = []
-      formats << ["Generic formats", -1]
-      WillFilter::Config.default_export_formats.each do |frmt|
-        formats << [frmt, frmt]
-      end
-      if custom_formats.size > 0
-        formats << ["Custom formats", -2]
-        custom_formats.each do |frmt|
-          formats << frmt
-        end
-      end
-      formats
+      (WillFilter::Config.default_export_formats + (custom_formats || [])).collect { |filter|
+        [filter.name.split("::").last, filter.name]
+      }
     end
   
-    def custom_format?
-      custom_formats.each do |frmt|
-        return true if frmt[1].to_sym == format
+    def exporter
+      return @_exporter if @_exporter
+
+      klass = @format.to_s.safe_constantize
+
+      unless klass < WillFilter::Exporter::Base
+        return nil
       end
-      false
-    end
-    
-    def custom_formats
-      []
-    end
-    
-    def process_custom_format
-      ""
+
+      @_exporter ||= klass.new(self)
     end
 
     def association_name(inner_join)

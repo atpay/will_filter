@@ -7,6 +7,7 @@ Spork.prefork do
 
 	require File.expand_path("../../test/dummy/config/environment.rb",  __FILE__)
 	require 'rspec/rails'
+        require 'pry'
 
 	ENGINE_RAILS_ROOT=File.join(File.dirname(__FILE__), '../')
 
@@ -16,7 +17,7 @@ Spork.prefork do
 
 	RSpec.configure do |config|
 	  config.use_transactional_fixtures = true
-      config.use_instantiated_fixtures  = false	  
+          config.use_instantiated_fixtures  = false	  
 	end
 
 end
