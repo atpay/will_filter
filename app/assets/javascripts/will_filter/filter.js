@@ -396,11 +396,6 @@ Wf.Exporter.prototype = {
 			
     this.updateExportFields();
 		
-    if (Wf.value("wf_export_fields") == "") {
-      alert("Please select st least one field to export");
-      return;
-    }
-
     if (Wf.value('wf_export_format_selector') == "-1") {
       alert("Please select an export format");
       return;
