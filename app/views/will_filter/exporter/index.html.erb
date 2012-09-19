@@ -6,31 +6,23 @@
 </div>
 
 <div class="wf_exporter_container">
-
   <table style="width:100%" cellpadding="0px" cellspacing="0px;">
     <thead>
       <tr>
-        <td><input type="checkbox" id="wf_fld_all" onClick="wfExporter.selectAllFields(this);" style="width:20px;"></td>
+        <td><input type="checkbox" id="wf_fld_all" onClick="wfExporter.selectAllFields(this);" style="width:20px;" checked="checked"></td>
         <td>Name</td>
-        <td>Type</td>
       </tr>        
     </thead>
-    <tbody>
-      <% @wf_filter.export_columns.each_with_index do |col, index| %>
+    <tbody id="wf_export_flds">
       <tr>
-          <td>
-              <input type="checkbox" id="wf_fld_chk_<%=index%>" onClick="wfExporter.selectField(this);" style="width:20px;"><input type="hidden" id="wf_fld_name_<%=index%>" value="<%=col.name%>">
-          </td>
-          <td><%=col.name %></td>
-          <td><%=col.type %></td>
+        <td colspan="2">Select Export Format</td>
       </tr>
-      <% end %>
     </tbody>
   </table>
   
   <hr>
   <div class="center">
-    Format: <%= select_tag("wf_export_format_selector", options_for_select(@wf_filter.export_formats,  @wf_filter.format)) %>
+    Format: <%= select_tag("wf_export_format_selector", options_for_select(@wf_filter.export_formats,  @wf_filter.format), :prompt => "Select...", :onchange => "wfExporter.fields();") %>
   </div>
   <div class="center">
       <%=link_to_function("<span>Export</span>".html_safe, "wfExporter.exportFilter()", :class => "wf_grey_button wf_pcb") %>

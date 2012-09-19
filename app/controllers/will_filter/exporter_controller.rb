@@ -30,75 +30,20 @@ module WillFilter
       render :layout => false
     end
   
+    def fields
+      @wf_filter = WillFilter::Filter.deserialize_from_params(params)
+      @exporter = @wf_filter.exporter
+      render :layout => false
+    end
+
     def export
       params[:page] = 1
       params[:wf_per_page] = 10000 # max export limit
   
       @wf_filter = WillFilter::Filter.deserialize_from_params(params)
       
-      if @wf_filter.custom_format?
-        send_data(@wf_filter.process_custom_format, :type => 'text', :charset => 'utf-8')
-        return
-      end
-      
-      unless @wf_filter.valid_format?
-        render :text => "The export format is not supported (#{@wf_filter.format})"
-        return     
-      end
-      
-      if @wf_filter.format == :xml
-        return send_xml_data(@wf_filter)
-      end  
-  
-      if @wf_filter.format == :json
-        return send_json_data(@wf_filter)
-      end  
-      
-      if @wf_filter.format == :csv
-        return send_csv_data(@wf_filter)
-      end  
-  
-      render :layout => false
+      data, opts = @wf_filter.exporter.process
+      send_data(data, opts)
     end  
-  
-  private
-    
-    def results_from(wf_filter)
-      results = []
-      
-      wf_filter.results.each do |obj|
-        hash = {}
-        wf_filter.fields.each do |field|
-          hash[field] = obj.send(field).to_s 
-        end  
-        results << hash
-      end
-      
-      results
-    end
-  
-    def send_xml_data(wf_filter)
-      send_data(results_from(wf_filter).to_xml, :type => 'text/xml', :charset => 'utf-8')
-    end  
-  
-    def send_json_data(wf_filter)
-      send_data(results_from(wf_filter).to_json, :type => 'text', :charset => 'utf-8')
-    end  
-    
-    def send_csv_data(wf_filter)
-      csv_string = CSV.generate do |csv|
-        csv << wf_filter.fields
-        wf_filter.results.each do |obj|
-          row = []
-          wf_filter.fields.each do |field|
-            row << obj.send(field).to_s 
-          end    
-          csv << row
-        end
-      end
-      
-      send_data csv_string, :type => 'text/csv; charset=utf-8; header=present', :charset => 'utf-8', 
-                            :disposition => "attachment; filename=results.csv"      
-    end
   end
 end

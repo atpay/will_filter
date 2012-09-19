@@ -1,5 +1,5 @@
 #--
-# Copyright (c) 2010-2011 Michael Berkovich
+# Copyright (c) 2010-2012 James Kassemi
 #
 # Permission is hereby granted, free of charge, to any person obtaining
 # a copy of this software and associated documentation files (the
@@ -21,24 +21,44 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #++
 
-WillFilter::Engine.routes.draw do
-  match 'filter/index', :to => 'filter#index'
-  match 'filter/add_condition', :to => 'filter#add_condition'
-  match 'filter/update_condition', :to => 'filter#update_condition'
-  match 'filter/remove_condition', :to => 'filter#remove_condition'
-  match 'filter/remove_all_conditions', :to => 'filter#remove_all_conditions'
-  match 'filter/load_filter', :to => 'filter#load_filter'
-  match 'filter/save_filter', :to => 'filter#save_filter'
-  match 'filter/update_filter', :to => 'filter#update_filter'
-  match 'filter/delete_filter', :to => 'filter#delete_filter'
+module WillFilter
+  module Exporter
+    class Base
+      def initialize(filter)
+        @filter = filter
+      end
 
-  match 'calendar', :to => 'calendar#index'
-  match 'calendar/index', :to => 'calendar#index'
+      def process
+        return to_data, options
+      end
 
-  match 'exporter', :to => 'exporter#index'
-  match 'exporter/index', :to => 'exporter#index'
-  match 'exporter/fields', :to => 'exporter#fields'
-  match 'exporter/export', :to => 'exporter#export'
+      # Override to process results.
+      def to_data
+        results.to_s
+      end
 
-  root :to => "filter#index"
+      def options
+        { :type => "text",
+          :charset => "utf-8" }
+      end
+
+      def fields
+        @filter.fields
+      end
+
+      def eligible_fields
+        @filter.export_fields
+      end
+
+      private
+      def results
+        @filter.results.collect { |record|
+          fields.inject({}){ |h, field|
+            h[field] = record.send(field).to_s
+            h
+          }
+        }
+      end
+    end
+  end
 end

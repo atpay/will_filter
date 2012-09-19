@@ -42,8 +42,12 @@
 
 module WillFilter
   class Filter < ActiveRecord::Base
-    self.table_name = :will_filter_filters 
+    include WillFilter
+
     attr_accessible :type, :name, :data, :user_id, :model_class_name
+
+    self.table_name = :will_filter_filters 
+    attr_accessor :custom_formats
 
     # set_table_name  :will_filter_filters
     serialize       :data
@@ -103,7 +107,12 @@ module WillFilter
     def format
       @format ||= :html
     end
-  
+
+    def format=(v)
+      @format = v.to_sym
+      @_exporter = nil
+    end
+ 
     def fields
       @fields ||= []
     end
@@ -475,9 +484,9 @@ module WillFilter
       end
   
       if params[:wf_export_format].blank?
-        @format = :html
+        self.format = :html
       else  
-        @format = params[:wf_export_format].to_sym
+        self.format = params[:wf_export_format]
       end
       
       i = 0
@@ -716,33 +725,26 @@ module WillFilter
     # Export Filter Data
     #############################################################################
     def export_formats
-      formats = []
-      formats << ["Generic formats", -1]
-      WillFilter::Config.default_export_formats.each do |frmt|
-        formats << [frmt, frmt]
-      end
-      if custom_formats.size > 0
-        formats << ["Custom formats", -2]
-        custom_formats.each do |frmt|
-          formats << frmt
-        end
-      end
-      formats
+      (WillFilter::Config.default_export_formats + (custom_formats || [])).collect { |filter|
+        filter = export_filter_class(filter)
+        [filter.name.split("::").last, filter.name]
+      }
     end
-  
-    def custom_format?
-      custom_formats.each do |frmt|
-        return true if frmt[1].to_sym == format
+ 
+    def export_fields
+      model_class.columns.collect(&:name)
+    end
+ 
+    def exporter
+      return @_exporter if @_exporter
+
+      klass = export_filter_class(@format)
+
+      unless klass and klass < WillFilter::Exporter::Base
+        return nil
       end
-      false
-    end
-    
-    def custom_formats
-      []
-    end
-    
-    def process_custom_format
-      ""
+
+      @_exporter ||= klass.new(self)
     end
 
     def association_name(inner_join)
@@ -843,6 +845,23 @@ module WillFilter
 
     def count(column_name)
       model_class.count(column_name, :conditions => sql_conditions)
+    end
+
+    private
+    def export_filter_class(name_or_class)
+      if name_or_class.is_a? String or name_or_class.is_a? Symbol
+        # Backwards compatibility
+        filter = {
+          :html => "WillFilter::Exporter::HTML",
+          :xml => "WillFilter::Exporter::XML",
+          :json => "WillFilter::Exporter::JSON",
+          :csv => "WillFilter::Exporter::CSV"
+        }[name_or_class.to_sym] || name_or_class
+
+        filter = filter.to_s.safe_constantize
+      else
+        name_or_class
+      end
     end
 
   end

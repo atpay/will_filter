@@ -334,7 +334,7 @@ Wf.Exporter = function(options) {
 }
 
 Wf.Exporter.prototype = {
-	show: function (trigger) {
+  show: function (trigger) {
 	  Wf.Utils.update('wf_exporter', '/will_filter/exporter', {
 	    parameters: Wf.Utils.serializeForm('wf_form'),
 	    onComplete: function(transport) {
@@ -346,6 +346,16 @@ Wf.Exporter.prototype = {
 	    } 
 	  });
   },
+
+  fields: function(){
+    Wf.element('wf_export_format').value = Wf.value('wf_export_format_selector'); 
+
+    Wf.Utils.update('wf_export_flds', '/will_filter/exporter/fields', {
+      parameters: Wf.Utils.serializeForm('wf_form'),
+      onComplete: function(transport){ }
+    });
+  },
+
   hide: function() {
     Wf.Effects.fade("wf_exporter");
   },
@@ -386,11 +396,6 @@ Wf.Exporter.prototype = {
 			
     this.updateExportFields();
 		
-    if (Wf.value("wf_export_fields") == "") {
-      alert("Please select st least one field to export");
-      return;
-    }
-
     if (Wf.value('wf_export_format_selector') == "-1") {
       alert("Please select an export format");
       return;

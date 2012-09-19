@@ -26,7 +26,8 @@ require 'pp'
 
 [
  ".",
- "./containers"
+ "./containers",
+ "./exporter"
 ].each do |dir|
     Dir[File.expand_path("#{File.dirname(__FILE__)}/#{dir}/*.rb")].sort.each do |file|
       require(file)
