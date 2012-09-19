@@ -348,6 +348,8 @@ Wf.Exporter.prototype = {
   },
 
   fields: function(){
+    Wf.element('wf_export_format').value = Wf.value('wf_export_format_selector'); 
+
     Wf.Utils.update('wf_export_flds', '/will_filter/exporter/fields', {
       parameters: Wf.Utils.serializeForm('wf_form'),
       onComplete: function(transport){ }
