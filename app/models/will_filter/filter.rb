@@ -107,7 +107,12 @@ module WillFilter
     def format
       @format ||= :html
     end
-  
+
+    def format=(v)
+      @format = v.to_sym
+      @_exporter = nil
+    end
+ 
     def fields
       @fields ||= []
     end
@@ -479,9 +484,9 @@ module WillFilter
       end
   
       if params[:wf_export_format].blank?
-        @format = :html
+        self.format = :html
       else  
-        @format = params[:wf_export_format].to_sym
+        self.format = params[:wf_export_format]
       end
       
       i = 0
@@ -721,16 +726,21 @@ module WillFilter
     #############################################################################
     def export_formats
       (WillFilter::Config.default_export_formats + (custom_formats || [])).collect { |filter|
+        filter = export_filter_class(filter)
         [filter.name.split("::").last, filter.name]
       }
     end
-  
+ 
+    def export_fields
+      model_class.columns.collect(&:name)
+    end
+ 
     def exporter
       return @_exporter if @_exporter
 
-      klass = @format.to_s.safe_constantize
+      klass = export_filter_class(@format)
 
-      unless klass < WillFilter::Exporter::Base
+      unless klass and klass < WillFilter::Exporter::Base
         return nil
       end
 
@@ -835,6 +845,23 @@ module WillFilter
 
     def count(column_name)
       model_class.count(column_name, :conditions => sql_conditions)
+    end
+
+    private
+    def export_filter_class(name_or_class)
+      if name_or_class.is_a? String or name_or_class.is_a? Symbol
+        # Backwards compatibility
+        filter = {
+          :html => "WillFilter::Exporter::HTML",
+          :xml => "WillFilter::Exporter::XML",
+          :json => "WillFilter::Exporter::JSON",
+          :csv => "WillFilter::Exporter::CSV"
+        }[name_or_class.to_sym] || name_or_class
+
+        filter = filter.to_s.safe_constantize
+      else
+        name_or_class
+      end
     end
 
   end

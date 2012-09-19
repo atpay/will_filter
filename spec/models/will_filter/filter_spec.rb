@@ -245,4 +245,24 @@ describe WillFilter::Filter do
     end
   end
 
+  describe 'export functionality' do
+    before :all do
+      @filter = WillFilter::Filter.new(User)
+    end
+
+    it "Should have default export columns" do
+      @filter.export_fields.length.should eq(7)
+      @filter.export_fields.should include("first_name")
+    end
+
+    it "should find the default export format classes" do
+      [:html, :xml, :json, :csv].each do |format|
+        @filter.from_params({
+          "wf_export_format" => format.to_s
+        })
+
+        @filter.exporter.should_not be_nil
+      end
+    end
+  end
 end

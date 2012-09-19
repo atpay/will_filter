@@ -37,6 +37,7 @@ WillFilter::Engine.routes.draw do
 
   match 'exporter', :to => 'exporter#index'
   match 'exporter/index', :to => 'exporter#index'
+  match 'exporter/fields', :to => 'exporter#fields'
   match 'exporter/export', :to => 'exporter#export'
 
   root :to => "filter#index"

@@ -20,11 +20,10 @@ module WillFilter
       end
 
       def options
-        {
+        super.merge({
           :type => 'text/csv; charset=utf-8; header=present', 
-          :charset => 'utf-8', 
           :disposition => "attachment; filename=results.csv"      
-        }
+        })
       end
     end
   end

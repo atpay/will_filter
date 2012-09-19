@@ -9,20 +9,29 @@ module WillFilter
             b.table {
               b.tr {
                 fields.each do |field|
-                  b.th(field)
+                  b.th(field.to_s)
                 end
               }
 
               results.each do |row|
-                fields.each do |field|
-                  b.td(row[field])
-                end
+                b.tr {
+                  fields.each do |field|
+                    b.td(row[field])
+                  end
+                }
               end
             }
           }
         }
 
         b.to_s
+      end
+
+      def options
+        super.merge({
+          :type => 'text/html', 
+          :disposition => "attachment; filename=results.html"      
+        })
       end
     end
   end

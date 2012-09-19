@@ -1,0 +1,9 @@
+<% @wf_filter.exporter.eligible_fields.each_with_index do |col, index| %>
+  <tr>
+      <td>
+          <input type="checkbox" id="wf_fld_chk_<%=index%>" onClick="wfExporter.selectField(this);" style="width:20px;" checked="checked">
+          <input type="hidden" id="wf_fld_name_<%=index%>" value="<%=col%>">
+      </td>
+      <td><%= col %></td>
+  </tr>
+<% end %>

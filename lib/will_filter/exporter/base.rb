@@ -42,11 +42,15 @@ module WillFilter
           :charset => "utf-8" }
       end
 
-      private
       def fields
         @filter.fields
       end
 
+      def eligible_fields
+        @filter.export_fields
+      end
+
+      private
       def results
         @filter.results.collect { |record|
           fields.inject({}){ |h, field|

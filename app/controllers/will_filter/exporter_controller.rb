@@ -30,6 +30,12 @@ module WillFilter
       render :layout => false
     end
   
+    def fields
+      @wf_filter = WillFilter::Filter.deserialize_from_params(params)
+      @exporter = @wf_filter.exporter
+      render :layout => false
+    end
+
     def export
       params[:page] = 1
       params[:wf_per_page] = 10000 # max export limit

@@ -1,13 +1,6 @@
 require File.expand_path('../../spec_helper', File.dirname(__FILE__))
 
 describe WillFilter::ExporterController do
-  describe "GET index" do
-    it "returns successfully" do
-      get :index
-      response.code.should eq("200")
-    end
-  end
-
   before :all do
     5.times do |i|
       User.create :first_name => "User #{i}"
@@ -16,6 +9,31 @@ describe WillFilter::ExporterController do
 
   after :all do
     User.delete_all
+  end
+
+  describe "GET index" do
+    it "returns successfully" do
+      get :index
+      response.code.should eq("200")
+    end
+  end
+
+  describe "GET fields" do
+    render_views
+
+    it "returns successfully" do
+      get :fields, :wf_model => "User"
+      response.code.should eq("200")
+    end
+
+    it "returns a list of the right fields" do
+      WillFilter::Filter.any_instance.stub(:export_fields).and_return(["jim", "henson"])
+      get :fields, :wf_model => "User", :wf_export_format => "csv"
+      response.code.should eq("200")
+
+      response.body.should include("jim")
+      response.body.should include("henson")
+    end
   end
 
   describe "Export handles requests"
