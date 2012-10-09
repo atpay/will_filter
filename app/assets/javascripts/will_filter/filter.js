@@ -89,7 +89,7 @@ Wf.Effects = {
 ****************************************************************************/
 
 Wf.Filter = function(options){
-	var self = this;
+  var self = this;
   this.original_form_action = null;
 }
 

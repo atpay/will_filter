@@ -212,7 +212,6 @@ describe WillFilter::Filter do
   end
 
   describe 'deserialization' do
-
     context 'deserializing a filter with conditions' do
       before :all do 
         @filter = WillFilter::Filter.new(User)

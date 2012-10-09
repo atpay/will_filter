@@ -23,92 +23,66 @@
 
 module WillFilter
   class FilterController < ApplicationController
-    
-    def index
-      @filters = WillFilter::Filter.new(WillFilter::Filter).deserialize_from_params(params).results
+    before_filter :find_or_load_filter
+
+    def show
+      @filters = @filter.results
+    end
+
+    def create
+      raise WillFilter::FilterException.new("Saving functions are disabled") unless WillFilter::Config.saving_enabled?
+
+      @filter.save
+      render(:partial => '/will_filter/filter/conditions', :layout=>false, :locals => {:wf_filter => @filter})
+    end
+  
+    def update
+      raise WillFilter::FilterException.new("Update functions are disabled") unless  WillFilter::Config.saving_enabled?
+
+      @filter.save
+      render(:partial => '/will_filter/filter/conditions', :layout=>false, :locals => {:wf_filter => @filter})
+    end
+  
+    def destroy
+      raise WillFilter::FilterException.new("Delete functions are disabled") unless  WillFilter::Config.saving_enabled?
+
+      @filter.destroy
+      render(:partial => '/will_filter/filter/conditions', :layout=>false, :locals => {:wf_filter => @filter})
     end
   
     def update_condition
-      wf_filter = WillFilter::Filter.deserialize_from_params(params)
-      condition = wf_filter.condition_at(params[:at_index].to_i)
-      condition.container.reset_values
-      render(:partial => '/will_filter/filter/conditions', :layout=>false, :locals => {:wf_filter => wf_filter})
+      @filter.condition_at(params[:at_index].to_i).reset_values
+      render(:partial => '/will_filter/filter/conditions', :layout=>false, :locals => {:wf_filter => @filter})
     end
   
     def remove_condition
-      wf_filter = WillFilter::Filter.deserialize_from_params(params)
-      wf_filter.remove_condition_at(params[:at_index].to_i)
-      render(:partial => '/will_filter/filter/conditions', :layout=>false, :locals => {:wf_filter => wf_filter})
+      @filter.remove_condition(params[:at_index].to_i)
+      render(:partial => '/will_filter/filter/conditions', :layout=>false, :locals => {:wf_filter => @filter})
     end
   
     def add_condition
-      wf_filter = WillFilter::Filter.deserialize_from_params(params)
       index = params[:after_index].to_i
       if index == -1
-        wf_filter.add_default_condition_at(wf_filter.size)
+        @filter.add_default_condition_at(@filter.size)
       else
-        wf_filter.add_default_condition_at(params[:after_index].to_i + 1)
+        @filter.add_default_condition_at(params[:after_index].to_i + 1)
       end
-      render(:partial => '/will_filter/filter/conditions', :layout=>false, :locals => {:wf_filter => wf_filter})
+      render(:partial => '/will_filter/filter/conditions', :layout=>false, :locals => {:wf_filter => @filter})
     end
   
     def remove_all_conditions
-      wf_filter = WillFilter::Filter.deserialize_from_params(params)
-      wf_filter.remove_all
-      render(:partial => '/will_filter/filter/conditions', :layout=>false, :locals => {:wf_filter => wf_filter})
+      @filter.remove_all
+      render(:partial => '/will_filter/filter/conditions', :layout=>false, :locals => {:wf_filter => @filter})
     end
   
     def load_filter
-      wf_filter = WillFilter::Filter.deserialize_from_params(params)
-      wf_filter = wf_filter.load_filter!(params[:wf_key])
-      render(:partial => '/will_filter/filter/conditions', :layout=>false, :locals => {:wf_filter => wf_filter})
+      @filter.load_filter!(params[:wf_key])
+      render(:partial => '/will_filter/filter/conditions', :layout=>false, :locals => {:wf_filter => @filter})
     end
-  
-    def save_filter
-      raise WillFilter::FilterException.new("Saving functions are disabled") unless  WillFilter::Config.saving_enabled?
 
-      params.delete(:wf_id)
-      
-      wf_filter = WillFilter::Filter.deserialize_from_params(params)
-      wf_filter.validate!
-
-      unless wf_filter.errors?
-        wf_filter.save
-      end
-      
-      wf_filter.key= wf_filter.id.to_s 
-      
-      render(:partial => '/will_filter/filter/conditions', :layout=>false, :locals => {:wf_filter => wf_filter})
-    end
-  
-    def update_filter
-      raise WillFilter::FilterException.new("Update functions are disabled") unless  WillFilter::Config.saving_enabled?
-
-      wf_filter = WillFilter::Filter.find_by_id(params.delete(:wf_id))
-      wf_filter.deserialize_from_params(params)
-      wf_filter.validate!
-      
-      unless wf_filter.errors?
-        wf_filter.save
-      end
-      
-      wf_filter.key= wf_filter.id.to_s 
-      
-      render(:partial => '/will_filter/filter/conditions', :layout=>false, :locals => {:wf_filter => wf_filter})
-    end
-  
-    def delete_filter
-      raise WillFilter::FilterException.new("Delete functions are disabled") unless  WillFilter::Config.saving_enabled?
-
-      wf_filter = WillFilter::Filter.find_by_id(params[:wf_id])
-      wf_filter.destroy if wf_filter
-  
-      wf_filter = WillFilter::Filter.deserialize_from_params(params)
-      wf_filter.id=nil
-      wf_filter.key=nil
-      wf_filter.remove_all
-      
-      render(:partial => '/will_filter/filter/conditions', :layout=>false, :locals => {:wf_filter => wf_filter})
+    private
+    def find_or_load_filter
+      @filter = WillFilter::Filter.find_and_initialize(params[:id], params[:filter])
     end
   end
 end

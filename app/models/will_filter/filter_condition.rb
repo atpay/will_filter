@@ -22,38 +22,33 @@
 #++
 
 module WillFilter
-  class FilterCondition
-    attr_accessor :filter, :key, :operator, :container
-  
-    def initialize(filter, key, operator, container_class, values)
-      @filter     = filter
-      @key        = key
-      @operator   = operator
-      @container  = WillFilter::Config.containers[container_class].constantize.new(filter, self, operator, values)
+  class FilterCondition < ActiveRecord::Base
+    belongs_to :filter
+    serialize :values
+
+    validate_presence_of :operator, 
+      :container_type, 
+      :filter
+
+    def values
+      super || []
     end
-  
-    def validate
-      container.validate
+
+    def operator
+      self[:operator].to_sym
     end
-  
-    def serialize_to_params(params, index)
-      params["wf_c#{index}".to_sym] = key
-      params["wf_o#{index}".to_sym] = operator
-      container.serialize_to_params(params, index)
-      params
+
+    def container
+      @container ||= WillFilter::Config.containers[self[:container_type]].constantize.new(filter, self, operator, values)
     end
-    
+
     def full_key
-      if key.to_s.index('.')
-        parts = key.to_s.split(".")
-        join_class = parts.first.camelcase.constantize
-        return "#{join_class.table_name}.#{parts.last}"
-      end  
-      "#{filter.table_name}.#{key}"
-    end
-    
-    def to_s
-      key
+      attr_name, table_name = key.split(".", 2).reverse
+      table_name = (table_name ||= filter.table_name).split(".").first
+  
+      raise Exception unless table_name.camelcase.constantize.column_names.include? attr_name
+
+      "#{table_name}.#{attr_name}"
     end
   end
 end

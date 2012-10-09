@@ -9,7 +9,5 @@ class CreateWillFilterFilters < ActiveRecord::Migration
       
       t.timestamps
     end
-    
-    add_index :will_filter_filters, [:user_id]
   end
 end

@@ -26,21 +26,18 @@ require 'csv'
 module WillFilter
   class ExporterController < ApplicationController
     def index
-      @wf_filter = WillFilter::Filter.deserialize_from_params(params)
+      @wf_filter = WillFilter::Filter.find params[:id]
       render :layout => false
     end
   
     def fields
-      @wf_filter = WillFilter::Filter.deserialize_from_params(params)
+      @wf_filter = WillFilter::Filter.find params[:id]
       @exporter = @wf_filter.exporter
       render :layout => false
     end
 
     def export
-      params[:page] = 1
-      params[:wf_per_page] = 10000 # max export limit
-  
-      @wf_filter = WillFilter::Filter.deserialize_from_params(params)
+      @wf_filter = WillFilter::Filter.find params[:id]
       
       data, opts = @wf_filter.exporter.process
       send_data(data, opts)

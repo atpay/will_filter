@@ -40,20 +40,31 @@
 #
 #++
 
+require File.expand_path('../filter/params', __FILE__)
+
 module WillFilter
   class Filter < ActiveRecord::Base
     include WillFilter
-
-    attr_accessible :type, :name, :data, :user_id, :model_class_name
+    include Params
 
     self.table_name = :will_filter_filters 
-    attr_accessor :custom_formats
 
-    # set_table_name  :will_filter_filters
-    serialize       :data
-    before_save     :prepare_save
-    after_find      :process_find
-    
+    has_many :conditions
+    attr_accessor :custom_formats
+    serialize :values
+
+    validate :validate_conditions
+
+    attr_accessible :type, :name, :user_id, :model_class_name
+  
+    class << self
+      def find_and_initialize(id, params)
+        @filter = WillFilter::Filter.where(:id => id).first_or_initialize.tap { |f|
+          f.attributes = params
+        }
+      end
+    end
+
     #############################################################################
     # Basics 
     #############################################################################
@@ -69,16 +80,6 @@ module WillFilter
 
     def dup
       super.tap {|ii| ii.conditions = self.conditions.dup}
-    end
-    
-    def prepare_save
-      self.data = serialize_to_params
-      self.type = self.class.name
-    end
-    
-    def process_find
-      @errors = {}
-      deserialize_from_params(self.data)
     end
     
     #############################################################################
@@ -100,10 +101,6 @@ module WillFilter
       @key ||= ''
     end
   
-    def errors 
-      @errors ||= {}
-    end
-    
     def format
       @format ||= :html
     end
@@ -415,113 +412,10 @@ module WillFilter
     def remove_all
       @conditions = []
     end
-  
-    #############################################################################
-    # Serialization 
-    #############################################################################
-    def serialize_to_params(merge_params = {})
-      params = {}
-      params[:wf_type]          = self.class.name
-      params[:wf_match]         = match
-      params[:wf_model]         = model_class_name
-      params[:wf_order]         = order
-      params[:wf_order_type]    = order_type
-      params[:wf_per_page]      = per_page
-      params[:wf_export_fields] = fields.join(',')
-      params[:wf_export_format] = format
-      
-      0.upto(size - 1) do |index|
-        condition = condition_at(index)
-        condition.serialize_to_params(params, index)
-      end
-      HashWithIndifferentAccess.new(params.merge(merge_params))
-    end
-    alias_method :to_params, :serialize_to_params
-
-    #############################################################################
-    # allows to create a filter from params only
-    #############################################################################
-    def self.deserialize_from_params(params)
-      params = HashWithIndifferentAccess.new(params) unless params.is_a?(HashWithIndifferentAccess)
-
-      params[:wf_type] = self.name unless params[:wf_type]
-      filter_class = params[:wf_type].constantize
-      filter_instance = filter_class.new
-
-      unless filter_instance.kind_of?(WillFilter::Filter)
-        raise WillFilter::FilterException.new("Invalid filter class. Filter classes must extand WillFilter::Filter.")
-      end  
-      
-      if WillFilter::Config.require_filter_extensions?
-        filter_instance.deserialize_from_params(params) 
-      else  
-        filter_class.new(params[:wf_model]).deserialize_from_params(params) 
-      end
-    end
-    
-    def deserialize_from_params(params)
-      params = HashWithIndifferentAccess.new(params) unless params.is_a?(HashWithIndifferentAccess)
-
-      @conditions = []
-      @match                = params[:wf_match]       || :all
-      @key                  = params[:wf_key]         || self.id.to_s
-
-      self.model_class_name = params[:wf_model]       if params[:wf_model]
-      
-      @per_page             = params[:wf_per_page]    || default_per_page
-      @page                 = params[:page]           || 1
-      @order_type           = params[:wf_order_type]  || default_order_type
-      @order                = params[:wf_order]       || default_order
-      
-      self.id   =  params[:wf_id].to_i  unless params[:wf_id].blank?
-      self.name =  params[:wf_name]     unless params[:wf_name].blank?
-      
-      @fields = []
-      unless params[:wf_export_fields].blank?
-        params[:wf_export_fields].split(",").each do |fld|
-          @fields << fld.to_sym
-        end
-      end
-  
-      if params[:wf_export_format].blank?
-        self.format = :html
-      else  
-        self.format = params[:wf_export_format]
-      end
-      
-      i = 0
-      while params["wf_c#{i}"] do
-        conditon_key = params["wf_c#{i}"]
-        operator_key = params["wf_o#{i}"]
-        values = []
-        j = 0
-        while params["wf_v#{i}_#{j}"] do
-          values << params["wf_v#{i}_#{j}"]
-          j += 1
-        end
-        i += 1
-        add_condition(conditon_key, operator_key.to_sym, values)
-      end
-  
-      if params[:wf_submitted] == 'true'
-        validate!
-      end
-
-      if WillFilter::Config.user_filters_enabled? and WillFilter::Config.current_user
-        self.user_id = WillFilter::Config.current_user.id
-      end
-  
-      self
-    end
-    alias_method :from_params, :deserialize_from_params
     
     #############################################################################
     # Validations 
     #############################################################################
-    def errors?
-     (@errors and @errors.size > 0)
-    end
-    
     def empty?
       size == 0
     end
@@ -541,19 +435,16 @@ module WillFilter
       not (sconditions & rconditions).empty?
     end
     
-    def validate!
-      @errors = {}
+    def validate_conditions
       0.upto(size - 1) do |index|
         condition = condition_at(index)
         err = condition.validate
-        @errors[index] = err if err
+        @errors[:condition] << err if err
       end
       
       unless required_conditions_met?
-        @errors[:filter] = "Filter must contain at least one of the following conditions: #{required_condition_keys.join(", ")}"
+        @errors[:base] << "Filter must contain at least one of the following conditions: #{required_condition_keys.join(", ")}"
       end
-      
-      errors?
     end
     
     #############################################################################
