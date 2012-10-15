@@ -333,11 +333,11 @@ Wf.Exporter = function(options) {
   document.body.appendChild(this.container);
 }
 
-window.export_path = window.export_path || "/will_filter/exporter";
+window.export_path = window.export_path || '/will_filter/exporter/export';
 
 Wf.Exporter.prototype = {
   show: function (trigger) {
-	  Wf.Utils.update('wf_exporter', export_path, {
+	  Wf.Utils.update('wf_exporter', '/will_filter/exporter', {
 	    parameters: Wf.Utils.serializeForm('wf_form'),
 	    onComplete: function(transport) {
           var trigger_position = Wf.Utils.cumulativeOffset(trigger);
@@ -404,7 +404,7 @@ Wf.Exporter.prototype = {
     }
 
     Wf.element('wf_export_format').value = Wf.value('wf_export_format_selector'); 
-    Wf.element('wf_form').action = '/will_filter/exporter/export';
+    Wf.element('wf_form').action = export_path;
     Wf.submit('wf_form');
   }
 };
