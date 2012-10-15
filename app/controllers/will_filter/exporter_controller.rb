@@ -25,7 +25,7 @@ require 'csv'
 
 module WillFilter
   class ExporterController < ApplicationController
-    before_filter :check_exports_enabled
+    before_filter :check_exports_enabled, :except => :fields
 
     def index
       @wf_filter = WillFilter::Filter.deserialize_from_params(params)
