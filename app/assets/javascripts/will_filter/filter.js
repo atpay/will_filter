@@ -333,9 +333,11 @@ Wf.Exporter = function(options) {
   document.body.appendChild(this.container);
 }
 
+window.export_path = window.export_path || "/will_filter/exporter";
+
 Wf.Exporter.prototype = {
   show: function (trigger) {
-	  Wf.Utils.update('wf_exporter', '/will_filter/exporter', {
+	  Wf.Utils.update('wf_exporter', export_path, {
 	    parameters: Wf.Utils.serializeForm('wf_form'),
 	    onComplete: function(transport) {
           var trigger_position = Wf.Utils.cumulativeOffset(trigger);

@@ -25,6 +25,8 @@ require 'csv'
 
 module WillFilter
   class ExporterController < ApplicationController
+    before_filter :check_exports_enabled
+
     def index
       @wf_filter = WillFilter::Filter.deserialize_from_params(params)
       render :layout => false
@@ -45,5 +47,12 @@ module WillFilter
       data, opts = @wf_filter.exporter.process
       send_data(data, opts)
     end  
+
+    private
+    def check_exports_enabled
+      unless WillFilter::Config.export_options[:controller]
+        raise ActiveRecord::RecordNotFound
+      end
+    end
   end
 end
