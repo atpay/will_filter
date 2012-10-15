@@ -735,6 +735,10 @@ module WillFilter
       model_class.columns.collect(&:name)
     end
  
+    def export?
+      @format != :html
+    end
+
     def exporter
       return @_exporter if @_exporter
 
