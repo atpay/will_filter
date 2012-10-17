@@ -1,3 +1,5 @@
+require 'csv'
+
 module WillFilter
   module Exporter
     class CSV < Base
