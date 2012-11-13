@@ -824,7 +824,9 @@ module WillFilter
           recs = Kaminari.paginate_array(recs)
         end  
 
-        recs = recs.page(page).per(per_page)
+        recs = recs.page(page)
+        recs = recs.per(per_page) if per_page
+      
         recs.wf_filter = self
         recs
       end
