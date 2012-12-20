@@ -716,9 +716,7 @@ module WillFilter
       load_default_filter(key)
       return self unless empty?
       
-      filter = WillFilter::Filter.find_by_id(key_or_id.to_i)
-      raise WillFilter::FilterException.new("Invalid filter key #{key_or_id.to_s}") if filter.nil?
-      filter
+      WillFilter::Filter.find_by_id(key_or_id.to_i) || self
     end
   
     #############################################################################
